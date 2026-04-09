@@ -2,6 +2,7 @@ SetTitleMatchMode(2)
 #Include "C:\dotfiles\AHK\Common.ahk"
 
 #Include "c:/dotfiles/AHK/func.ahk"
+#Include "c:/dotfiles/AHK/git.ahk"
 
 #HotIf WinActive("ahk_class TscShellContainerClass", )
   Capslock::           ; (couldn't make Ctrl(+Shift)+Caps Lock work for some reason
@@ -45,4 +46,3 @@ return
 ;        }
 ;    }
 ;    Return
-	
