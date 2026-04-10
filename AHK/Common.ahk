@@ -102,13 +102,12 @@ Run("regedit.exe")
 return
 } ; V1toV2: Added closing brace for [<#+s]
 
-#n::
-{
-global
-
-ActiveWinClass("HwndWrapper[DefaultDomain;;78a7241c-694f-4bf4-9937-12bde4b0ab5c]", "devenv.exe")
-return
-} ; V1toV2: Added closing brace for [#n]
+; #n::
+; {
+; global
+; ActiveWinClass("HwndWrapper[DefaultDomain;;78a7241c-694f-4bf4-9937-12bde4b0ab5c]", "devenv.exe")
+; return
+; }
 
 #+c::
 { ; V1toV2: Added opening brace for [#+c]
@@ -119,11 +118,10 @@ return
 } ; V1toV2: Added closing brace for [#+c]
 
 #m::
-{ ; V1toV2: Added opening brace for [#m]
-global ; V1toV2: Made function global
-ActiveWinClass("HwndWrapper[DefaultDomain;;fe61d881-aab5-46f3-82c9-e6b85f294cf4]", "devenv.exe")
+{
+ActiveWinClass("HwndWrapper[DefaultDomain", "devenv.exe")
 return
-} ; V1toV2: Added closing brace for [#m]
+}
 
 #z::
 { ; V1toV2: Added opening brace for [#z]
@@ -210,12 +208,20 @@ return
 } ; V1toV2: Added closing brace for [<#t]
 
 <#+t::
-{ ; V1toV2: Added opening brace for [<#+t]
-global ; V1toV2: Made function global
+{
 Run("C:\portable\ProcessExplorer\procexp.exe")
 return
-} ; V1toV2: Added closing brace for [<#+t]
+}
 
+; middle mouse key -->copy
+; clears the clipboard first to ensure you are copying new text
+MButton:: {
+    A_Clipboard := "" ; Clear clipboard
+    Send("^c")        ; Send copy
+    if !ClipWait(0.5) ; Wait to ensure text was copied
+        ToolTip("No text selected!")
+    SetTimer () => ToolTip(), -2000
+}
 <#q:: !F4 ;退出
 <#h::Send("{Left}")
 <#j::Send("{Down}")
@@ -233,24 +239,6 @@ return
 
 #?::Run("calc.exe")
 return 
-
-<#space::
-{ ; V1toV2: Added opening brace for [<#space]
-global ; V1toV2: Made function global
-if WinExist("ahk_exe wps.exe")
-    {
-    if WinActive()
-        {
-        WinMinimize("ahk_exe wps.exe")
-        }
-    else
-    {
-        WinActivate()
-    }
-    return
-}
-return
-} ; V1toV2: Added closing brace for [<#space]
 
 
 <#F11::
@@ -281,8 +269,8 @@ return
 ; Run explorer.exe ::{208D2C60-3AEA-1069-A2D7-08002B30309D}
 ; return
 
-#+e::
-{ ; V1toV2: Added opening brace for [#+e]
+#+b::
+{
 global ; V1toV2: Made function global
 MyClip := ClipboardAll()
 ;clipboard =
@@ -296,7 +284,7 @@ else{
 }
 A_Clipboard := MyClip
 return
-} ; V1toV2: Added closing brace for [#+e]
+}
 
 #b::
 { ; V1toV2: Added opening brace for [#b]

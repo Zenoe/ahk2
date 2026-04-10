@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.0
 
 ; Hotkey: Ctrl + Alt + G (Change as desired)
-^!g:: {
+<#w:: {
     path := GetExplorerPath()
     if (path) {
         ; Launch Git Bash in the retrieved directory
@@ -38,3 +38,4 @@ GetExplorerPath() {
     }
     return ""
 }
+

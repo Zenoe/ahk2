@@ -6,56 +6,74 @@
 
 ActiveWinClass(p_class_name, p_run_path:="0", p_param:="0", p_title:="")
 {
- ;msgBox %p_class_name%
- ; attention: parameters value should be surrond by '%' to eval the value
+    ; Modified for fuzzy matching on p_class_name:
+    ;   - Uses substring match (InStr, case-insensitive) on the window's class name.
+    ;   - This replaces the exact "ahk_class" match while preserving the original p_title behaviour.
+    ;   - If p_title is supplied, only windows whose title matches (according to current SetTitleMatchMode) are considered.
+    ;   - If p_title is blank, all visible top-level windows are scanned.
+    ;   - First matching window (in Z-order) is used.
 
-  ; else select window by its class and title combined with "SetTitleMatchMode, 2"
-  if WinExist(p_title " ahk_class " p_class_name)
-  {
-    if WinActive()
-    {
-      ;; put focus onto another window
-      Send("{ALT DOWN}{TAB}{ALT UP}")
-      if(p_class_name != "mintty"){
-      ;; there seems to be some issue with minimize x window
-         WinMinimize(p_title " ahk_class " p_class_name)
-      }
-      ; WinGet, Instances, Count, ahk_class %p_class_name%
-      ; If Instances > 1
-      ;   WinActivateBottom, ahk_class %p_class_name%
-    }
+    ; Find matching window with fuzzy class name
+    if (p_title = "")
+        winList := WinGetList()
     else
+        winList := WinGetList(p_title)
+
+    matchingHwnd := 0
+    for hwnd in winList
     {
-      WinActivate()
-    }
-    return true
-  }
-  else
-  {
-    if (p_run_path != 0)
-    {
-      if (p_param != 0)
-      {
-        Run(p_run_path " -search " A_Clipboard)
-      }
-      else
-      {
-        Run(p_run_path, , , &procId)
-        ; https://www.autohotkey.com/boards/viewtopic.php?t=84903
-        ; workaround to activate application after lauching it
-        ErrorLevel := !WinWait("ahk_pid " procid, , 30)
-        If ErrorLevel
+        class := WinGetClass(hwnd)
+        if (InStr(class, p_class_name))  ; Fuzzy: class contains p_class_name (case-insensitive)
         {
-        ;msgbox, 0x0,, 824E no window after 30 seconds. Aborting ...
-        return
+            matchingHwnd := hwnd
+            break
         }
-        WinActivate("ahk_pid " procId)
-      }
-      return true
-     }
+    }
+
+    if (matchingHwnd)
+    {
+        if WinActive(matchingHwnd)
+        {
+            ; put focus onto another window
+            Send("{ALT DOWN}{TAB}{ALT UP}")
+            if (p_class_name != "mintty")
+            {
+                ; there seems to be some issue with minimize x window
+                WinMinimize(matchingHwnd)
+            }
+        }
+        else
+        {
+            WinActivate(matchingHwnd)
+        }
+        return true
+    }
     else
-      return false
-  }
+    {
+        if (p_run_path != 0)
+        {
+            if (p_param != 0)
+            {
+                Run(p_run_path " -search " A_Clipboard)
+            }
+            else
+            {
+                Run(p_run_path, , , &procId)
+                ; https://www.autohotkey.com/boards/viewtopic.php?t=84903
+                ; workaround to activate application after launching it
+                ErrorLevel := !WinWait("ahk_pid " procId, , 30)
+                if ErrorLevel
+                {
+                    ;msgbox, 0x0,, 824E no window after 30 seconds. Aborting ...
+                    return
+                }
+                WinActivate("ahk_pid " procId)
+            }
+            return true
+        }
+        else
+            return false
+    }
 }
 
 ActiveGrpWinClass(p_class_name, p_grp_name, p_run_path)
