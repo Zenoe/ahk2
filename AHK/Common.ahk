@@ -1,106 +1,36 @@
 #Include "c:/dotfiles/AHK/func.ahk"
 
-; V1toV2: Removed #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
-; #Warn  ; Enable warnings to assist with detecting common errors.
 SendMode("Input")  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
-
-; kill shift+space
-<+space::
-{ ; V1toV2: Added opening brace for [<+space]
-global ; V1toV2: Made function global
-return
-} ; V1toV2: Added closing brace for [<+space]
 
 #SingleInstance Force
 SetTitleMatchMode(2)
 ;DetectHiddenWindows, on
 
 
-;*************************************
-cos_mousedrag_treshold := 20 ; pixels
-#HotIf !WinActive("ahk_class ConsoleWindowClass")
-
-; ~mbutton::
-;   WinGetClass cos_class, A
-;   if (cos_class == "Emacs")
-;     SendInput ^y
-;   else
-;     SendInput ^v
-;   return
-  
-#HotIf !WinActive()
-
-
-;; clipx
-^mbutton::
-{ ; V1toV2: Added opening brace for [^mbutton]
-global ; V1toV2: Made function global
-  SendInput("^+{insert}")
-  return
-} ; V1toV2: Added closing brace for [^mbutton]
-
 #i::Run("`"C:\Windows\system32\rundll32.exe`" sysdm.cpl,EditEnvironmentVariables")
 
 #+i::Run("`"C:\WINDOWS\system32\rundll32.exe`" shell32.dll,Control_RunDLL sysdm.cpl")
 
+; <#v:: ActiveWinClass("MozillaWindowClass", "C:\Program Files\Mozilla Firefox\firefox.exe")
 
-<#v::
-{ ; V1toV2: Added opening brace for [<#v]
-global ; V1toV2: Made function global
-ActiveWinClass("MozillaWindowClass", "C:\Program Files\Mozilla Firefox\firefox.exe")
-;ActiveWinClass("VirtualConsoleClass", "C:\portable\cmder\Cmder.exe")
-return
-} ; V1toV2: Added closing brace for [<#v]
+<#o:: ActiveWinClass("Notepad", "Notepad")
+<#+o:: Run("`"notepad`"")
 
-<#+v::
-{ ; V1toV2: Added opening brace for [<#+v]
-global ; V1toV2: Made function global
-ActiveWinClass("VirtualConsoleClass", "C:\portable\cmder\Cmder.exe")
-return
-} ; V1toV2: Added closing brace for [<#+v]
-<#a::
-{
-global ; V1toV2: Made function global
-ActiveWinClass("Emacs", "C:\emacs\bin\runemacs.exe")
-return
-}
+<#f:: ActiveWinClass("EVERYTHING", "C:\Program Files\Everything\Everything.exe")
+<#+f:: ActiveWinClass("EVERYTHING", "C:\Program Files\Everything\Everything.exe", "Clipboard")
 
-;**************Notepad
-<#o::
-{ ; V1toV2: Added opening brace for [<#o]
-global ; V1toV2: Made function global
-ActiveWinClass("Notepad", "Notepad")
-return
-} ; V1toV2: Added closing brace for [<#o]
+<#+s:: Run("regedit.exe")
 
-<#+o::
-{ ; V1toV2: Added opening brace for [<#+o]
-global ; V1toV2: Made function global
-Run("`"notepad`"")
-return
-} ; V1toV2: Added closing brace for [<#+o]
+#n::ToggleOrRunx("HwndWrapper", "devenv.exe", "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe")
 
-<#f::
-{
-global
-ActiveWinClass("EVERYTHING", "C:\Program Files\Everything\Everything.exe")
-return
-}
+#+c:: ActiveWinClass("Chrome_WidgetWin_1", "C:\Program Files\Google\Chrome\Application\chrome.exe")
 
-<#+f::
-{
-global ; V1toV2: Made function global
-ActiveWinClass("EVERYTHING", "C:\Program Files\Everything\Everything.exe", "Clipboard")
-return
-}
+; #n::
 
-<#+s::
-{ ; V1toV2: Added opening brace for [<#+s]
-global ; V1toV2: Made function global
-Run("regedit.exe")
-return
-} ; V1toV2: Added closing brace for [<#+s]
+#x:: ActivateWindowFuzzyTitle("MINGW64", "mintty", "C:\Program Files\Git\git-bash.exe")
+
+#e:: ActiveWinClass("CabinetWClass", "explorer.exe", "", "")
 
 ; #n::
 ; {
@@ -109,13 +39,6 @@ return
 ; return
 ; }
 
-#+c::
-{ ; V1toV2: Added opening brace for [#+c]
-global ; V1toV2: Made function global
-ActiveWinClass("Chrome_WidgetWin_1", "C:\portable\TOOL\Chromium\chrome.exe")
-;ActiveWinClass("Chrome_WidgetWin_1", "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
-return
-} ; V1toV2: Added closing brace for [#+c]
 
 #m::
 {
@@ -123,37 +46,6 @@ ActiveWinClass("HwndWrapper[DefaultDomain", "devenv.exe")
 return
 }
 
-#z::
-{ ; V1toV2: Added opening brace for [#z]
-global ; V1toV2: Made function global
-ActivateWindowFuzzy("MINGW64", "mintty", "C:\Program Files\Git\git-bash.exe")
-return
-} ; V1toV2: Added closing brace for [#z]
-
-
-#e::
-{
-ActiveWinClass("CabinetWClass", "explorer.exe", "", "")
-return
-}
-; if ActiveWinClass("Emacs") = false
-;   {
-;     IfWinExist , ahk_class ahk_class mintty
-;     {
-;       WinActivate
-
-;     }
-;     else
-;     {
-;       ActiveWinClass("mintty", "D:\portable\.babun\cygwin\bin\mintty.exe")
-;     }
-;     ; WinWait, ahk_class mintty ;Waits until the specified window exists.
-;       ;Waits until the specified window is active
-;       WinWaitActive, ahk_class mintty 
-;       send, emacs-w32 & {enter}
-;       WinMinimize, ahk_class mintty
-;   }
-; return
 
 ;CapsLock::ESC
 LAlt & Capslock::SetCapsLockState(GetKeyState("CapsLock", "T") ? "Off" : "On")
@@ -198,14 +90,14 @@ return
 ; return
 
 <#t::
-{ ; V1toV2: Added opening brace for [<#t]
+{
 global ; V1toV2: Made function global
 if WinExist("Windows 任务")
 WinActivate()
 else 
 Run("taskmgr.exe")
 return 
-} ; V1toV2: Added closing brace for [<#t]
+}
 
 <#+t::
 {
@@ -248,17 +140,8 @@ ActiveWinClass("SUMATRA_PDF_FRAME", "C:\portable\SumatraPDF\SumatraPDF.exe")
 return
 } ; V1toV2: Added closing brace for [<#F11]
 
-; <#n::
-; ActiveWinClass("TNavicatMainForm", "C:\Program Files\PremiumSoft\Navicat Premium\navicat.exe")
-; return
 
-
-<#+w::
-{ ; V1toV2: Added opening brace for [<#+w]
-global ; V1toV2: Made function global
-Run("shell:RecycleBinFolder")
-return
-} ; V1toV2: Added closing brace for [<#+w]
+<#+w:: Run("shell:RecycleBinFolder")
 
 ;<#+p::
 ;Run shutdown -s -t 0
@@ -358,37 +241,23 @@ return
 ; return
 
 #c::
-{ ; V1toV2: Added opening brace for [#c]
-global ; V1toV2: Made function global
-ActiveGrpWinClass("Chrome_WidgetWin_1", "kjexplorers5", "chrome.exe")
-; ActivateWindowFuzzy("Testsdn", "Chrome_WidgetWin_1", "chrome.exe")
+{
+ToggleOrRun("ahk_class Chrome_WidgetWin_1", "ahk_exe chrome.exe", "chrome.exe")
+;ActiveGrpWinClass("Chrome_WidgetWin_1", "kjexplorers5", "C:\Program Files\Google\Chrome\Application\chrome.exe")
 return
-} ; V1toV2: Added closing brace for [#c]
+}
 
 
 #+x::
-{ ; V1toV2: Added opening brace for [#+x]
-global ; V1toV2: Made function global
+{
 ActiveWinClass("XLMAIN", "EXCEL.EXE")
-; ActivateWindowFuzzy("ab2", "mintty", "C:\Apps\cygwin\bin\mintty.exe")
+; ActivateWindowFuzzyTitle("ab2", "mintty", "C:\Apps\cygwin\bin\mintty.exe")
 return
-} ; V1toV2: Added closing brace for [#+x]
+}
 
-~LButton & MButton::
-{ ; V1toV2: Added opening brace for [~LButton & MButton]
-global ; V1toV2: Made function global
-;
-Send("^{End}")
-;MsgBox You Pressed the Middle Button on your mouse.
-return
-} ; V1toV2: Added closing brace for [~LButton & MButton]
-
-~LButton & RButton::
-{ ; V1toV2: Added opening brace for [~LButton & RButton]
-global ; V1toV2: Made function global
-Send("^w")
-return
-} ; V1toV2: Added closing brace for [~LButton & RButton]
+~LButton & MButton::Send("^{End}")
+; Hold Left Mouse Button, then press Right Mouse Button → send Ctrl + W
+~LButton & RButton::Send("^w")
 
 ;The tilde ~ prefix makes a hotkey keep its original function
 ; ~*q::
@@ -396,19 +265,14 @@ return
 ; 	return
 
 #+v::
-{ ; V1toV2: Added opening brace for [#+v]
+{
 global ; V1toV2: Made function global
 cliptext := A_Clipboard
 SendInput(cliptext " {Enter}")
 return
-} ; V1toV2: Added closing brace for [#+v]
-
-#[::
-{
-global ; V1toV2: Made function global
-ActivateChromeTab("Testsdn")
-return
 }
+
+#[:: ActivateChromeTab("DeepSeek")
 
 
 ; Reload the script
@@ -416,4 +280,42 @@ return
 {
 scriptPath :="C:\dotfiles\AHK\start.ahk"
 Reload()
+}
+
+SetPinyinToEnglishMode(hwnd := 0)
+{
+    if (hwnd = 0)
+        hwnd := WinExist("A")
+
+    ; 关键修正：必须加上 imm32\ 前缀 + 正确的返回类型
+    hIMC := DllCall("imm32\ImmGetContext", "Ptr", hwnd, "Ptr")
+
+    if (hIMC)
+    {
+        ; IME_CMODE_ALPHANUMERIC = 0  → 强制进入英文模式
+        DllCall("imm32\ImmSetConversionStatus", "Ptr", hIMC, "UInt", 0, "UInt", 0)
+
+        ; 释放上下文
+        DllCall("imm32\ImmReleaseContext", "Ptr", hwnd, "Ptr", hIMC)
+    }
+
+    Sleep(50)   ; 给微软拼音一点反应时间
+}
+
+
+; =============================================================
+; Updated ActiveWinClass - now RETURNS the hwnd on success (instead of just true/false)
+; This lets us target the exact window when switching IME
+; =============================================================
+
+<#z::
+{
+;; need to switch to english 'cause win11's bug: always switch to chinese when activate emacs
+    hwnd := ActiveWinClass("Emacs", "C:\emacs\bin\runemacs.exe")
+
+    ; Switch Microsoft Pinyin → English (US) on the exact Emacs window
+     if (hwnd)
+    ;     SetPinyinToEnglishMode(hwnd)
+
+    return
 }

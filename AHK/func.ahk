@@ -4,76 +4,73 @@
 ; else
 ;   msgBox "s"
 
-ActiveWinClass(p_class_name, p_run_path:="0", p_param:="0", p_title:="")
-{
-    ; Modified for fuzzy matching on p_class_name:
-    ;   - Uses substring match (InStr, case-insensitive) on the window's class name.
-    ;   - This replaces the exact "ahk_class" match while preserving the original p_title behaviour.
-    ;   - If p_title is supplied, only windows whose title matches (according to current SetTitleMatchMode) are considered.
-    ;   - If p_title is blank, all visible top-level windows are scanned.
-    ;   - First matching window (in Z-order) is used.
 
-    ; Find matching window with fuzzy class name
-    if (p_title = "")
-        winList := WinGetList()
-    else
-        winList := WinGetList(p_title)
+; Find matching window with fuzzy class name
+
+;   - Uses substring match (InStr, case-insensitive) on the window's class name.
+;   - This replaces the exact "ahk_class" match while preserving the original p_title behaviour.
+;   - If p_title is supplied, only windows whose title matches (according to current SetTitleMatchMode) are considered.
+;   - If p_title is blank, all visible top-level windows are scanned.
+;   - First matching window (in Z-order) is used.
+ActiveWinClass(p_class_name, p_run_path := "", p_param := "", p_title := "")
+{
+    ; Get candidate windows
+    winList := (p_title = "") ? WinGetList() : WinGetList(p_title)
 
     matchingHwnd := 0
+
     for hwnd in winList
     {
-        class := WinGetClass(hwnd)
-        if (InStr(class, p_class_name))  ; Fuzzy: class contains p_class_name (case-insensitive)
+        class := WinGetClass("ahk_id " hwnd)
+
+        ; fuzzy match (case-insensitive)
+        if InStr(class, p_class_name)
         {
             matchingHwnd := hwnd
             break
         }
     }
 
-    if (matchingHwnd)
+    if matchingHwnd
     {
-        if WinActive(matchingHwnd)
+        winId := "ahk_id " matchingHwnd
+
+        if WinActive(winId)
         {
-            ; put focus onto another window
-            Send("{ALT DOWN}{TAB}{ALT UP}")
+            ; switch away first (avoid weird focus issues)
+            Send("!{Tab}")
+
             if (p_class_name != "mintty")
-            {
-                ; there seems to be some issue with minimize x window
-                WinMinimize(matchingHwnd)
-            }
+                WinMinimize(winId)
         }
         else
         {
-            WinActivate(matchingHwnd)
+            WinActivate(winId)
         }
-        return true
+
+        return matchingHwnd
     }
-    else
+
+    ; --- No window found → launch app ---
+    if (p_run_path != "")
     {
-        if (p_run_path != 0)
-        {
-            if (p_param != 0)
-            {
-                Run(p_run_path " -search " A_Clipboard)
-            }
-            else
-            {
-                Run(p_run_path, , , &procId)
-                ; https://www.autohotkey.com/boards/viewtopic.php?t=84903
-                ; workaround to activate application after launching it
-                ErrorLevel := !WinWait("ahk_pid " procId, , 30)
-                if ErrorLevel
-                {
-                    ;msgbox, 0x0,, 824E no window after 30 seconds. Aborting ...
-                    return
-                }
-                WinActivate("ahk_pid " procId)
-            }
-            return true
-        }
-        else
-            return false
+        cmd := p_run_path
+
+        if (p_param != "")
+            cmd .= " " p_param
+
+        Run(cmd, , , &pid)
+
+        ; wait for window
+        if !WinWait("ahk_pid " pid, , 30)
+            return 0
+
+        WinActivate("ahk_pid " pid)
+
+        return WinExist("ahk_pid " pid)
     }
+
+    return 0
 }
 
 ActiveGrpWinClass(p_class_name, p_grp_name, p_run_path)
@@ -99,6 +96,21 @@ return
 }
 
 
+; Function to Toggle or Run application
+ToggleOrRun(winClass, winExe, runPath) {
+    ; Combine criteria for precise matching
+    winTitle := winClass " " winExe
+
+    if WinExist(winTitle) {
+        if WinActive(winTitle) {
+            WinMinimize(winTitle)
+        } else {
+            WinActivate(winTitle)
+        }
+    } else {
+        Run(runPath)
+    }
+}
 
 SwitchIME(dwLayout){
     HKL:=DllCall("LoadKeyboardLayout", "Str", dwLayout, "UInt", 1)
@@ -167,7 +179,7 @@ IME_GET(WinTitle:="")
 }
 
 
-ActivateWindowFuzzy(title, targetClass := "", executablePath := "", parameter := "")
+ActivateWindowFuzzyTitle(title, targetClass := "", executablePath := "", parameter := "")
 {
   activeWindow := WinGetID("A")
 
@@ -249,3 +261,34 @@ ActivateChromeTab(tabTitle)
     Sleep(50)
   }
 }
+
+; Mode 1: A window's title or class must START with the specified string.
+; This is perfect for "HwndWrapper" prefix matching.
+SetTitleMatchMode 1
+ToggleOrRunx(classPrefix, winExe, runPath)
+{
+    winList := WinGetList("ahk_exe " winExe)
+
+    for hwnd in winList
+    {
+        class := WinGetClass("ahk_id " hwnd)
+        ; MsgBox class
+
+        if (SubStr(class, 1, StrLen(classPrefix)) = classPrefix)
+        {
+            if WinActive("ahk_id " hwnd)
+            {
+                WinMinimize("ahk_id " hwnd)
+            }
+            else
+            {
+                WinActivate("ahk_id " hwnd)
+            }
+            return
+        }
+    }
+
+    ; no matching window found → run program
+    Run(runPath)
+}
+
