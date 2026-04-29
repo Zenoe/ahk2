@@ -12,8 +12,76 @@
 ;   - If p_title is supplied, only windows whose title matches (according to current SetTitleMatchMode) are considered.
 ;   - If p_title is blank, all visible top-level windows are scanned.
 ;   - First matching window (in Z-order) is used.
+; old versioin do not support mouse curosr moving
+; ActiveWinClass(p_class_name, p_run_path := "", p_param := "", p_title := "")
+; {
+;     ; Get candidate windows
+;     winList := (p_title = "") ? WinGetList() : WinGetList(p_title)
+
+;     matchingHwnd := 0
+
+;     for hwnd in winList
+;     {
+;         class := WinGetClass("ahk_id " hwnd)
+
+;         ; fuzzy match (case-insensitive)
+;         if InStr(class, p_class_name)
+;         {
+;             matchingHwnd := hwnd
+;             break
+;         }
+;     }
+
+;     if matchingHwnd
+;     {
+;         winId := "ahk_id " matchingHwnd
+
+;         if WinActive(winId)
+;         {
+;             ; switch away first (avoid weird focus issues)
+;             Send("!{Tab}")
+
+;             if (p_class_name != "mintty")
+;                 WinMinimize(winId)
+;         }
+;         else
+;         {
+;             WinActivate(winId)
+;         }
+
+;         return matchingHwnd
+;     }
+
+;     ; --- No window found → launch app ---
+;     if (p_run_path != "")
+;     {
+;         cmd := p_run_path
+
+;         if (p_param != "")
+;             cmd .= " " p_param
+
+;         Run(cmd, , , &pid)
+
+;         ; wait for window
+;         if !WinWait("ahk_pid " pid, , 30)
+;             return 0
+
+;         WinActivate("ahk_pid " pid)
+
+;         return WinExist("ahk_pid " pid)
+;     }
+
+;     return 0
+; }
+
+; position the cursor to the center of newly activated windows.
+; DPI awareness + consistent screen coordinates, then move the cursor after activation.
 ActiveWinClass(p_class_name, p_run_path := "", p_param := "", p_title := "")
 {
+    ; 🔑 Fix DPI scaling issues (multi-monitor safe)
+    DllCall("SetThreadDpiAwarenessContext", "ptr", -3)
+    CoordMode "Mouse", "Screen"
+
     ; Get candidate windows
     winList := (p_title = "") ? WinGetList() : WinGetList(p_title)
 
@@ -37,16 +105,27 @@ ActiveWinClass(p_class_name, p_run_path := "", p_param := "", p_title := "")
 
         if WinActive(winId)
         {
-            ; switch away first (avoid weird focus issues)
+            ; switch away first
             Send("!{Tab}")
 
             if (p_class_name != "mintty")
                 WinMinimize(winId)
+
+            return matchingHwnd
         }
         else
         {
             WinActivate(winId)
+            WinWaitActive(winId)
         }
+
+        ; 🎯 move cursor to window center
+        WinGetPos(&x, &y, &w, &h, winId)
+
+        centerX := x + w // 2
+        centerY := y + h // 2
+
+        MouseMove(centerX, centerY, 0)
 
         return matchingHwnd
     }
@@ -66,8 +145,19 @@ ActiveWinClass(p_class_name, p_run_path := "", p_param := "", p_title := "")
             return 0
 
         WinActivate("ahk_pid " pid)
+        WinWaitActive("ahk_pid " pid)
 
-        return WinExist("ahk_pid " pid)
+        hwnd := WinExist("ahk_pid " pid)
+
+        ; 🎯 move cursor to new window center
+        WinGetPos(&x, &y, &w, &h, "ahk_id " hwnd)
+
+        centerX := x + w // 2
+        centerY := y + h // 2
+
+        MouseMove(centerX, centerY, 0)
+
+        return hwnd
     }
 
     return 0
@@ -270,6 +360,11 @@ ToggleOrRunx(classPrefix, winExe, runPath)
 {
     static lastIndex := 0
 
+    ; 🔑 make coordinates consistent (PER_MONITOR_AWARE_V2)
+    DllCall("SetThreadDpiAwarenessContext", "ptr", -3)
+
+    CoordMode "Mouse", "Screen"
+
     winList := []
 
     for hwnd in WinGetList("ahk_exe " winExe)
@@ -287,21 +382,23 @@ ToggleOrRunx(classPrefix, winExe, runPath)
         return
     }
 
-    ; cycle index
+    ; cycle
     lastIndex++
     if (lastIndex > winList.Length)
         lastIndex := 1
 
     hwnd := winList[lastIndex]
 
-    if WinActive("ahk_id " hwnd)
-    {
-        WinMinimize("ahk_id " hwnd)
-    }
-    else
-    {
-        WinActivate("ahk_id " hwnd)
-    }
+    WinActivate("ahk_id " hwnd)
+    WinWaitActive("ahk_id " hwnd)
+
+    ; get window rect (now DPI-correct)
+    WinGetPos(&x, &y, &w, &h, "ahk_id " hwnd)
+
+    centerX := x + w // 2
+    centerY := y + h // 2
+
+    MouseMove(centerX, centerY, 0)
 }
 ; ToggleOrRunx(classPrefix, winExe, runPath)
 ; {

@@ -379,15 +379,8 @@ SetPinyinToEnglishMode(hwnd := 0)
 ; =============================================================
 
 <#z::
-;CapsLock & z::
 {
-;; need to switch to english 'cause win11's bug: always switch to chinese when activate emacs
     hwnd := ActiveWinClass("Emacs", "C:\emacs\bin\runemacs.exe")
-
-    ; Switch Microsoft Pinyin → English (US) on the exact Emacs window
-     ; if (hwnd)
-     ;     SetPinyinToEnglishMode(hwnd)
-
     return
 }
 #Requires AutoHotkey v2.0
