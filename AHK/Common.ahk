@@ -15,44 +15,113 @@ SetTitleMatchMode(2)
 ; <#v:: ActiveWinClass("MozillaWindowClass", "C:\Program Files\Mozilla Firefox\firefox.exe")
 
 <#o:: ActiveWinClass("Notepad", "Notepad")
-<#+o:: Run("`"notepad`"")
+<#+o:: {
+    Run "notepad.exe"
 
-<#f:: ActiveWinClass("EVERYTHING", "C:\Program Files\Everything\Everything.exe")
-<#+f:: ActiveWinClass("EVERYTHING", "C:\Program Files\Everything\Everything.exe", "Clipboard")
+    ;  Wait for it to be ready
+    if WinWaitActive("ahk_class Notepad", , 3) {
+        ; 3. Only attempt to paste if the clipboard has content
+        if (A_Clipboard != "") {
+            Send "^v"
+        }
+    }
+
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; not deal with multi-tab explorer in win11
+; #HotIf WinActive("ahk_class CabinetWClass") or WinActive("ahk_class ExploreWClass")
+; <#+o::
+; {
+;     for window in ComObject("Shell.Application").Windows
+;     {
+;         if (window.hwnd == WinActive("A"))
+;         {
+;             for item in window.Document.SelectedItems
+;             {
+;                 Run("notepad.exe " . '"' . item.Path . '"')
+;                 return ; Opens only the first selected file
+;             }
+;         }
+;     }
+; }
+; #HotIf
+
+
+;ClipWait: Pauses the script until the clipboard contains data, preventing the script from trying to open an empty path.
+;#HotIf: Ensures the hotkey only works when a Windows Explorer window is active.
+; Hotkey: Press F1 while Explorer is active
+#HotIf WinActive("ahk_class CabinetWClass")
+<#e:: {
+    try {
+        selectedFiles := GetExplorerSelection()
+        if (selectedFiles.Length > 0) {
+            ; Open the first selected file with Notepad
+            Run('notepad.exe "' selectedFiles[1] '"')
+        }
+    } catch Error as err {
+        MsgBox("Error: " err.Message)
+    }
+}
+#HotIf
+
+; get current selected file of current tab of explorer
+GetExplorerSelection() {
+    hwnd := WinExist("A")
+    activeTab := 0
+
+    ; Windows 11 Tab Support: Identify the specific active tab handle
+    try activeTab := ControlGetHwnd("ShellTabWindowClass1", hwnd)
+
+    selectedPaths := []
+    shellWindows := ComObject("Shell.Application").Windows
+
+    for window in shellWindows {
+        ; Ensure we are looking at the correct Explorer window
+        if (window.hwnd != hwnd)
+            continue
+
+        ; If tabs exist, ensure we only pull from the visible/active tab
+        if (activeTab != 0) {
+            static IID_IShellBrowser := "{000214E2-0000-0000-C000-000000000046}"
+            shellBrowser := ComObjQuery(window, IID_IShellBrowser, IID_IShellBrowser)
+            ComCall(3, shellBrowser, "uint*", &thisTab := 0) ; GetWindow call
+            if (thisTab != activeTab)
+                continue
+        }
+
+        ; Retrieve paths of all selected items in this tab
+        for item in window.Document.SelectedItems {
+            selectedPaths.Push(item.Path)
+        }
+        break
+    }
+    return selectedPaths
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+<#f::{
+ActiveWinClass("EVERYTHING", "C:\Program Files\Everything\Everything.exe")
+return
+}
+; <#+f:: ActiveWinClass("EVERYTHING", "C:\Program Files\Everything\Everything.exe", "Clipboard")
+<#+f::{
+ ActiveWinClass("EVERYTHING", "C:\Program Files\Everything\Everything.exe", '-s "' A_Clipboard '"')
+ return
+}
 
 <#+s:: Run("regedit.exe")
 
+;#n::ActiveGrpWinClass("Chrome_WidgetWin_1", "kjexplorers4", "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe")
 #n::ToggleOrRunx("HwndWrapper", "devenv.exe", "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe")
 
-#+c:: ActiveWinClass("Chrome_WidgetWin_1", "C:\Program Files\Google\Chrome\Application\chrome.exe")
-
-; #n::
-
-#x:: ActivateWindowFuzzyTitle("MINGW64", "mintty", "C:\Program Files\Git\git-bash.exe")
-
-#e:: ActiveWinClass("CabinetWClass", "explorer.exe", "", "")
-
-; #n::
-; {
-; global
-; ActiveWinClass("HwndWrapper[DefaultDomain;;78a7241c-694f-4bf4-9937-12bde4b0ab5c]", "devenv.exe")
-; return
-; }
-
-
-#m::
-{
-ActiveWinClass("HwndWrapper[DefaultDomain", "devenv.exe")
-return
-}
-
+#+x:: ActivateWindowFuzzyTitle("MINGW64", "mintty", "C:\Program Files\Git\git-bash.exe")
 
 ;CapsLock::ESC
 LAlt & Capslock::SetCapsLockState(GetKeyState("CapsLock", "T") ? "Off" : "On")
 
 RShift & CapsLock::
-{ ; V1toV2: Added opening brace for [RShift & CapsLock]
-global ; V1toV2: Made function global
+{
+global
     ime_s := IME_GET()
     if (ime_s = 1) {
         SwitchIME(engCode)
@@ -62,14 +131,14 @@ global ; V1toV2: Made function global
     }
     ;SwitchIME(cnCode)
     return
-} ; V1toV2: Added closing brace for [RShift & CapsLock]
+}
 
 CapsLock::LCtrl
 
 ;-- when pressing CapsLock alone, it will activate the Escpae button
 Capslock Up::
-{ ; V1toV2: Added opening brace for [Capslock Up]
-global ; V1toV2: Made function global
+{
+global
 SendInput("{LControl Up}")  ;--For stability
 if (A_TimeSincePriorHotkey < 150)
 {
@@ -78,7 +147,7 @@ if (A_TimeSincePriorHotkey < 150)
 Else
 return
 return
-} ; V1toV2: Added closing brace for [Capslock Up]
+}
 ; CapsLock::
 ; send {Escape}
 ; ; A: for active window
@@ -91,7 +160,7 @@ return
 
 <#t::
 {
-global ; V1toV2: Made function global
+global
 if WinExist("Windows 任务")
 WinActivate()
 else 
@@ -134,11 +203,11 @@ return
 
 
 <#F11::
-{ ; V1toV2: Added opening brace for [<#F11]
-global ; V1toV2: Made function global
+{
+global
 ActiveWinClass("SUMATRA_PDF_FRAME", "C:\portable\SumatraPDF\SumatraPDF.exe")
 return
-} ; V1toV2: Added closing brace for [<#F11]
+}
 
 
 <#+w:: Run("shell:RecycleBinFolder")
@@ -154,7 +223,7 @@ return
 
 #+b::
 {
-global ; V1toV2: Made function global
+global
 MyClip := ClipboardAll()
 ;clipboard =
 Send("^c")
@@ -170,8 +239,8 @@ return
 }
 
 #b::
-{ ; V1toV2: Added opening brace for [#b]
-global ; V1toV2: Made function global
+{
+global
 MyClip := ClipboardAll()
 ;clipboard =
 Send("^c")
@@ -189,12 +258,12 @@ else{
 }
 A_Clipboard := MyClip
 return
-} ; V1toV2: Added closing brace for [#b]
+}
 
 
 #y::
-{ ; V1toV2: Added opening brace for [#y]
-global ; V1toV2: Made function global
+{
+global
 MyClip := ClipboardAll()
 ;clipboard =
 Send("^c")
@@ -212,11 +281,11 @@ else{
 }
 A_Clipboard := MyClip
 return
-} ; V1toV2: Added closing brace for [#y]
+}
 
 #g::
-{ ; V1toV2: Added opening brace for [#g]
-global ; V1toV2: Made function global
+{
+global
 MyClip := ClipboardAll()
 ;clipboard =
 Send("^c")
@@ -234,7 +303,7 @@ else{
 }
 A_Clipboard := MyClip
 return
-} ; V1toV2: Added closing brace for [#g]
+}
 
 ; #n::
 ; ActiveGrpWinClass("Chrome_WidgetWin_1", "kjexplorers4", "C:\Users\ab\AppData\Local\Programs\Microsoft VS Code\Code.exe")
@@ -248,10 +317,10 @@ return
 }
 
 
-#+x::
+#x::
 {
-ActiveWinClass("XLMAIN", "EXCEL.EXE")
-; ActivateWindowFuzzyTitle("ab2", "mintty", "C:\Apps\cygwin\bin\mintty.exe")
+ActiveWinClass("mintty", "C:\Users\2004l\Desktop\Cygwin64 Terminal.lnk")
+;ActivateWindowFuzzyTitle("ab2", "mintty", "C:\Apps\cygwin\bin\mintty.exe")
 return
 }
 
@@ -266,13 +335,14 @@ return
 
 #+v::
 {
-global ; V1toV2: Made function global
+global
 cliptext := A_Clipboard
 SendInput(cliptext " {Enter}")
 return
 }
 
 #[:: ActivateChromeTab("DeepSeek")
+;#]::
 
 
 ; Reload the script
@@ -309,13 +379,38 @@ SetPinyinToEnglishMode(hwnd := 0)
 ; =============================================================
 
 <#z::
+;CapsLock & z::
 {
 ;; need to switch to english 'cause win11's bug: always switch to chinese when activate emacs
     hwnd := ActiveWinClass("Emacs", "C:\emacs\bin\runemacs.exe")
 
     ; Switch Microsoft Pinyin → English (US) on the exact Emacs window
-     if (hwnd)
-    ;     SetPinyinToEnglishMode(hwnd)
+     ; if (hwnd)
+     ;     SetPinyinToEnglishMode(hwnd)
 
     return
+}
+#Requires AutoHotkey v2.0
+
+; Hotkey: Ctrl + Alt + C
+^!c:: {
+    targetPath := "C:\"
+    found := false
+
+    ; Iterate through all open shell windows
+    for window in ComObject("Shell.Application").Windows {
+        ; Check if the window is a File Explorer window (CabinetWClass)
+        if (InStr(window.FullName, "explorer.exe")) {
+            ; Navigate the existing window to the target path
+            window.Navigate(targetPath)
+            WinActivate("ahk_id " window.hwnd)
+            found := true
+            break
+        }
+    }
+
+    ; If no explorer window was open, run a new instance
+    if !found {
+        Run(targetPath)
+    }
 }

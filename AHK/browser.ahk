@@ -1,15 +1,15 @@
 
 
 
-<#p::
-{ ; V1toV2: Added opening brace for [<#p]
-global ; V1toV2: Made function global
-myclip:=A_Clipboard
-gurl := "www.macmillandictionary.com/dictionary/british/" . myclip 
-Run("chrome.exe " gurl)
-; run firefox.exe %gurl%
-return
-} ; V1toV2: Added closing brace for [<#p]
+; <#p::
+; {
+; global
+; myclip:=A_Clipboard
+; gurl := "www.macmillandictionary.com/dictionary/british/" . myclip
+; Run("chrome.exe " gurl)
+; ; run firefox.exe %gurl%
+; return
+; }
 
 
 ;-----------------------------------------------------
@@ -18,8 +18,7 @@ return
 ; MsgBox clipboard now has the following contents:%clipboard%
 ; return
 <#g::
-{ ; V1toV2: Added opening brace for [<#g]
-global ; V1toV2: Made function global
+{
 myclip:=A_Clipboard
 ;url:= %https://google.com/search?q=%%myclip%
 ; var2:="xxx"
@@ -33,25 +32,20 @@ myclip:=A_Clipboard
 gurl := "`"https://www.google.com/#q=" . myclip . "`""
 Run("chrome.exe " gurl)
 return
-} ; V1toV2: Added closing brace for [<#g]
+}
 
-; <#5::
-; myclip:=clipboard
-; MsgBox clipboard now has the following contents:%clipboard%
-; return
 <#b::
-{ ; V1toV2: Added opening brace for [<#b]
-global ; V1toV2: Made function global
+{
+global
 myclip:=A_Clipboard
 gurl := "`"https://www.baidu.com/s?&wd=" . myclip . "`""
 Run("chrome.exe " gurl)
 return
-} ; V1toV2: Added closing brace for [<#b]
+}
 
-<#g::
-{ ; V1toV2: Added opening brace for [<#g]
-global ; V1toV2: Made function global
-gurl := "http://localhost:8000"
-Run("chrome.exe " gurl)
-return
-} ; V1toV2: Added closing brace for [<#g]
+; <#g::
+; {
+; gurl := "http://localhost:8000"
+; Run("chrome.exe " gurl)
+; return
+; }

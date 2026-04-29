@@ -134,7 +134,7 @@ SendInputArray(a, t:=90) {
 
     SwitchIME(engCode)
     ; get current keyboard layout
-; V1toV2: Removed     SetFormat, Integer, H
+
     WinID := WinGetID("A")
     ThreadID:=DllCall("GetWindowThreadProcessId", "UInt", WinID, "UInt", 0)
     InputLocaleID:=DllCall("GetKeyboardLayout", "UInt", ThreadID, "UInt")
@@ -265,30 +265,106 @@ ActivateChromeTab(tabTitle)
 ; Mode 1: A window's title or class must START with the specified string.
 ; This is perfect for "HwndWrapper" prefix matching.
 SetTitleMatchMode 1
+; support cycling through multiple instances
 ToggleOrRunx(classPrefix, winExe, runPath)
 {
-    winList := WinGetList("ahk_exe " winExe)
+    static lastIndex := 0
 
-    for hwnd in winList
+    winList := []
+
+    for hwnd in WinGetList("ahk_exe " winExe)
     {
         class := WinGetClass("ahk_id " hwnd)
-        ; MsgBox class
-
         if (SubStr(class, 1, StrLen(classPrefix)) = classPrefix)
         {
-            if WinActive("ahk_id " hwnd)
-            {
-                WinMinimize("ahk_id " hwnd)
-            }
-            else
-            {
-                WinActivate("ahk_id " hwnd)
-            }
-            return
+            winList.Push(hwnd)
         }
     }
 
-    ; no matching window found → run program
-    Run(runPath)
-}
+    if (winList.Length = 0)
+    {
+        Run(runPath)
+        return
+    }
 
+    ; cycle index
+    lastIndex++
+    if (lastIndex > winList.Length)
+        lastIndex := 1
+
+    hwnd := winList[lastIndex]
+
+    if WinActive("ahk_id " hwnd)
+    {
+        WinMinimize("ahk_id " hwnd)
+    }
+    else
+    {
+        WinActivate("ahk_id " hwnd)
+    }
+}
+; ToggleOrRunx(classPrefix, winExe, runPath)
+; {
+;     winList := WinGetList("ahk_exe " winExe)
+
+;     for hwnd in winList
+;     {
+;         class := WinGetClass("ahk_id " hwnd)
+;         ; MsgBox class
+
+;         if (SubStr(class, 1, StrLen(classPrefix)) = classPrefix)
+;         {
+;             if WinActive("ahk_id " hwnd)
+;             {
+;                 WinMinimize("ahk_id " hwnd)
+;             }
+;             else
+;             {
+;                 WinActivate("ahk_id " hwnd)
+;             }
+;             return
+;         }
+;     }
+
+;     ; no matching window found → run program
+;     Run(runPath)
+; }
+
+#Requires AutoHotkey v2.0
+DllCall("SetThreadDpiAwarenessContext", "ptr", -3)
+
+!m:: {
+    CoordMode "Mouse", "Screen"
+
+    ; 1. Get current mouse position
+    MouseGetPos(&mouseX, &mouseY)
+
+    ; 2. Find which monitor the mouse is on
+    currentMon := 0
+    monCount := MonitorGetCount()
+
+    Loop monCount {
+        MonitorGet(A_Index, &L, &T, &R, &B)
+        if (mouseX >= L && mouseX <= R && mouseY >= T && mouseY <= B) {
+            currentMon := A_Index
+            break
+        }
+    }
+
+    ; If for some reason the monitor isn't found, default to 1
+    if (currentMon == 0)
+        currentMon := 1
+
+    ; 3. Identify the target monitor (Toggles between 1 and 2)
+    targetMon := (currentMon == 1) ? 2 : 1
+
+    ; 4. Use WorkArea instead of MonitorGet to avoid the Taskbar
+    MonitorGetWorkArea(targetMon, &Left, &Top, &Right, &Bottom)
+
+    ; 5. Calculate Center
+    centerX := Left + (Right - Left) / 2
+    centerY := Top + (Bottom - Top) / 2
+
+    ; 6. Move Mouse instantly
+    MouseMove(centerX, centerY, 0)
+}
