@@ -356,6 +356,7 @@ ActivateChromeTab(tabTitle)
 ; This is perfect for "HwndWrapper" prefix matching.
 SetTitleMatchMode 1
 ; support cycling through multiple instances
+
 ToggleOrRunx(classPrefix, winExe, runPath)
 {
     static lastIndex := 0
@@ -400,32 +401,6 @@ ToggleOrRunx(classPrefix, winExe, runPath)
 
     MouseMove(centerX, centerY, 0)
 }
-; ToggleOrRunx(classPrefix, winExe, runPath)
-; {
-;     winList := WinGetList("ahk_exe " winExe)
-
-;     for hwnd in winList
-;     {
-;         class := WinGetClass("ahk_id " hwnd)
-;         ; MsgBox class
-
-;         if (SubStr(class, 1, StrLen(classPrefix)) = classPrefix)
-;         {
-;             if WinActive("ahk_id " hwnd)
-;             {
-;                 WinMinimize("ahk_id " hwnd)
-;             }
-;             else
-;             {
-;                 WinActivate("ahk_id " hwnd)
-;             }
-;             return
-;         }
-;     }
-
-;     ; no matching window found → run program
-;     Run(runPath)
-; }
 
 #Requires AutoHotkey v2.0
 DllCall("SetThreadDpiAwarenessContext", "ptr", -3)

@@ -17,14 +17,13 @@ SetTitleMatchMode(2)
 <#o:: ActiveWinClass("Notepad", "Notepad")
 <#+o:: {
     Run "notepad.exe"
-
-    ;  Wait for it to be ready
-    if WinWaitActive("ahk_class Notepad", , 3) {
-        ; 3. Only attempt to paste if the clipboard has content
-        if (A_Clipboard != "") {
-            Send "^v"
-        }
-    }
+    ; ;  Wait for it to be ready
+    ; if WinWaitActive("ahk_class Notepad", , 3) {
+    ;     ; 3. Only attempt to paste if the clipboard has content
+    ;     if (A_Clipboard != "") {
+    ;         Send "^v"
+    ;     }
+    ; }
 
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -111,8 +110,8 @@ return
 
 <#+s:: Run("regedit.exe")
 
-;#n::ActiveGrpWinClass("Chrome_WidgetWin_1", "kjexplorers4", "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe")
-#n::ToggleOrRunx("HwndWrapper", "devenv.exe", "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe")
+#n::ActiveGrpWinClass("Chrome_WidgetWin_1", "kjexplorers4", "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe")
+;#n::ToggleOrRunx("HwndWrapper", "devenv.exe", "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe")
 
 #+x:: ActivateWindowFuzzyTitle("MINGW64", "mintty", "C:\Program Files\Git\git-bash.exe")
 
@@ -311,7 +310,7 @@ return
 
 #c::
 {
-ToggleOrRun("ahk_class Chrome_WidgetWin_1", "ahk_exe chrome.exe", "chrome.exe")
+ToggleOrRunx("Chrome_WidgetWin_1", "chrome.exe", "chrome.exe")
 ;ActiveGrpWinClass("Chrome_WidgetWin_1", "kjexplorers5", "C:\Program Files\Google\Chrome\Application\chrome.exe")
 return
 }
@@ -406,4 +405,56 @@ SetPinyinToEnglishMode(hwnd := 0)
     if !found {
         Run(targetPath)
     }
+}
+
+
+#Requires AutoHotkey v2.0
+
+; Hotkey: Win + Shift + Left Arrow
+#+Left::MoveWindowToNextScreen()
+
+; Hotkey: Win + Shift + Right Arrow
+#+Right::MoveWindowToNextScreen()
+
+MoveWindowToNextScreen() {
+    ; Get the handle of the active window
+    activeHWnd := WinExist("A")
+    if !activeHWnd
+        return
+
+    ; Get window position
+    WinGetPos(&x, &y, &w, &h, activeHWnd)
+
+    ; Determine which monitor the window is currently on
+    currentMonitor := 0
+    monitorCount := MonitorGetCount()
+
+    ; Loop through monitors to find where the window's center point is
+    centerX := x + (w / 2)
+    centerY := y + (h / 2)
+
+    loop monitorCount {
+        MonitorGetWorkArea(A_Index, &L, &T, &R, &B)
+        if (centerX >= L && centerX <= R && centerY >= T && centerY <= B) {
+            currentMonitor := A_Index
+            break
+        }
+    }
+
+    ; Calculate the next monitor index
+    nextMonitor := currentMonitor + 1
+    if (nextMonitor > monitorCount)
+        nextMonitor := 1
+
+    ; Get work areas of both monitors to handle scaling/resolution differences
+    MonitorGetWorkArea(currentMonitor, &currL, &currT, &currR, &currB)
+    MonitorGetWorkArea(nextMonitor, &nextL, &nextT, &nextR, &nextB)
+
+    ; Calculate new position relative to the next monitor's top-left corner
+    ; This maintains the relative position of the window
+    newX := nextL + (x - currL)
+    newY := nextT + (y - currT)
+
+    ; Move the window
+    WinMove(newX, newY, , , activeHWnd)
 }
