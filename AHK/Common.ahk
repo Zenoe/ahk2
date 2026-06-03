@@ -351,27 +351,6 @@ scriptPath :="C:\dotfiles\AHK\start.ahk"
 Reload()
 }
 
-SetPinyinToEnglishMode(hwnd := 0)
-{
-    if (hwnd = 0)
-        hwnd := WinExist("A")
-
-    ; 关键修正：必须加上 imm32\ 前缀 + 正确的返回类型
-    hIMC := DllCall("imm32\ImmGetContext", "Ptr", hwnd, "Ptr")
-
-    if (hIMC)
-    {
-        ; IME_CMODE_ALPHANUMERIC = 0  → 强制进入英文模式
-        DllCall("imm32\ImmSetConversionStatus", "Ptr", hIMC, "UInt", 0, "UInt", 0)
-
-        ; 释放上下文
-        DllCall("imm32\ImmReleaseContext", "Ptr", hwnd, "Ptr", hIMC)
-    }
-
-    Sleep(50)   ; 给微软拼音一点反应时间
-}
-
-
 ; =============================================================
 ; Updated ActiveWinClass - now RETURNS the hwnd on success (instead of just true/false)
 ; This lets us target the exact window when switching IME
@@ -382,7 +361,6 @@ SetPinyinToEnglishMode(hwnd := 0)
     hwnd := ActiveWinClass("Emacs", "C:\emacs\bin\runemacs.exe")
     return
 }
-#Requires AutoHotkey v2.0
 
 ; Hotkey: Ctrl + Alt + C
 ^!c:: {
@@ -408,8 +386,6 @@ SetPinyinToEnglishMode(hwnd := 0)
 }
 
 
-#Requires AutoHotkey v2.0
-
 ; Hotkey: Win + Shift + Left Arrow
 #+Left::MoveWindowToNextScreen()
 
@@ -417,19 +393,21 @@ SetPinyinToEnglishMode(hwnd := 0)
 #+Right::MoveWindowToNextScreen()
 
 MoveWindowToNextScreen() {
-    ; Get the handle of the active window
     activeHWnd := WinExist("A")
     if !activeHWnd
         return
 
-    ; Get window position
+    ; Check if the window is maximized
+    wasMaximized := WinGetMinMax(activeHWnd) = 1
+
+    ; Restore first if maximized so WinGetPos gives real coordinates
+    if wasMaximized
+        WinRestore(activeHWnd)
+
     WinGetPos(&x, &y, &w, &h, activeHWnd)
 
-    ; Determine which monitor the window is currently on
     currentMonitor := 0
     monitorCount := MonitorGetCount()
-
-    ; Loop through monitors to find where the window's center point is
     centerX := x + (w / 2)
     centerY := y + (h / 2)
 
@@ -441,20 +419,23 @@ MoveWindowToNextScreen() {
         }
     }
 
-    ; Calculate the next monitor index
-    nextMonitor := currentMonitor + 1
-    if (nextMonitor > monitorCount)
-        nextMonitor := 1
+    ; Fallback: if center not found (e.g. window is off-screen), use monitor 1
+    if !currentMonitor
+        currentMonitor := 1
 
-    ; Get work areas of both monitors to handle scaling/resolution differences
+    nextMonitor := Mod(currentMonitor, monitorCount) + 1
+
     MonitorGetWorkArea(currentMonitor, &currL, &currT, &currR, &currB)
     MonitorGetWorkArea(nextMonitor, &nextL, &nextT, &nextR, &nextB)
 
-    ; Calculate new position relative to the next monitor's top-left corner
-    ; This maintains the relative position of the window
-    newX := nextL + (x - currL)
-    newY := nextT + (y - currT)
-
-    ; Move the window
-    WinMove(newX, newY, , , activeHWnd)
+    if wasMaximized {
+        ; Move to top-left of next monitor's work area, then re-maximize
+        WinMove(nextL, nextT, , , activeHWnd)
+        WinMaximize(activeHWnd)
+    } else {
+        ; Preserve relative position, clamped to target monitor's work area
+        newX := nextL + (x - currL)
+        newY := nextT + (y - currT)
+        WinMove(newX, newY, , , activeHWnd)
+    }
 }
