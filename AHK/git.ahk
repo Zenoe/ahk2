@@ -5,7 +5,15 @@
     path := GetExplorerPath()
     if (path) {
         ; Launch Git Bash in the retrieved directory
-        Run('C:\Program Files\Git\git-bash.exe', path)
+        ;Run('C:\Program Files\Git\git-bash.exe', path)
+
+        Run('"C:\Program Files\Git\git-bash.exe"', path, , &gitBashPid)
+        ; Wait for the window to exist using the PID, then activate it
+        ; wait  3secs for that specific process window to appear
+        if WinWait("ahk_pid " gitBashPid, , 3) {
+            WinActivate("ahk_pid " gitBashPid)
+        }
+
     }
 }
 

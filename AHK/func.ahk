@@ -359,22 +359,15 @@ SetTitleMatchMode 1
 
 ToggleOrRunx(classPrefix, winExe, runPath)
 {
-    static lastIndex := 0
-
-    ; 🔑 make coordinates consistent (PER_MONITOR_AWARE_V2)
     DllCall("SetThreadDpiAwarenessContext", "ptr", -3)
-
     CoordMode "Mouse", "Screen"
 
     winList := []
-
     for hwnd in WinGetList("ahk_exe " winExe)
     {
         class := WinGetClass("ahk_id " hwnd)
         if (SubStr(class, 1, StrLen(classPrefix)) = classPrefix)
-        {
             winList.Push(hwnd)
-        }
     }
 
     if (winList.Length = 0)
@@ -383,22 +376,28 @@ ToggleOrRunx(classPrefix, winExe, runPath)
         return
     }
 
-    ; cycle
-    lastIndex++
-    if (lastIndex > winList.Length)
-        lastIndex := 1
+    ; Find where the active window is in the list
+    activeHwnd := WinExist("A")
+    currentIndex := 0
+    for i, hwnd in winList
+    {
+        if (hwnd = activeHwnd)
+        {
+            currentIndex := i
+            break
+        }
+    }
 
-    hwnd := winList[lastIndex]
+    ; Advance one step from current (wraps around)
+    nextIndex := Mod(currentIndex, winList.Length) + 1
+    hwnd := winList[nextIndex]
 
     WinActivate("ahk_id " hwnd)
     WinWaitActive("ahk_id " hwnd)
 
-    ; get window rect (now DPI-correct)
     WinGetPos(&x, &y, &w, &h, "ahk_id " hwnd)
-
     centerX := x + w // 2
     centerY := y + h // 2
-
     MouseMove(centerX, centerY, 0)
 }
 

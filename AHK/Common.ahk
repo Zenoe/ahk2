@@ -110,8 +110,8 @@ return
 
 <#+s:: Run("regedit.exe")
 
-#n::ActiveGrpWinClass("Chrome_WidgetWin_1", "kjexplorers4", "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe")
-;#n::ToggleOrRunx("HwndWrapper", "devenv.exe", "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe")
+;#n::ActiveGrpWinClass("Chrome_WidgetWin_1", "kjexplorers4", "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe")
+#n::ToggleOrRunx("HwndWrapper", "devenv.exe", "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe")
 
 #+x:: ActivateWindowFuzzyTitle("MINGW64", "mintty", "C:\Program Files\Git\git-bash.exe")
 
