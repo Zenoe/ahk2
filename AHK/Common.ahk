@@ -98,6 +98,9 @@ GetExplorerSelection() {
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+#b::{
+ToggleOrRunx("TscShellContainerClass", "mstsc.exe", "C:\Windows\System32\mstsc.exe")
+}
 <#f::{
 ActiveWinClass("EVERYTHING", "C:\Program Files\Everything\Everything.exe")
 return
@@ -237,7 +240,8 @@ A_Clipboard := MyClip
 return
 }
 
-#b::
+
+#!b::
 {
 global
 MyClip := ClipboardAll()
@@ -318,11 +322,17 @@ return
 
 #x::
 {
-ActiveWinClass("mintty", "C:\Users\2004l\Desktop\Cygwin64 Terminal.lnk")
-;ActivateWindowFuzzyTitle("ab2", "mintty", "C:\Apps\cygwin\bin\mintty.exe")
+;ActiveWinClass("mintty", "C:\Users\2004l\Desktop\Cygwin64 Terminal.lnk")
+ToggleOrRunxWithTitleNot("mintty", "mintty.exe", "C:\Users\2004l\Desktop\Cygwin64 Terminal.lnk", "MINGW64")
 return
 }
 
+#v::
+{
+ToggleOrRunxWithTitle("mintty", "mintty.exe", "C:\Program Files\Git\git-bash.exe", "MINGW64")
+;ActivateWindowFuzzyTitle("MINGW64", "mintty", "C:\Program Files\Git\git-bash.exe")
+return
+}
 ~LButton & MButton::Send("^{End}")
 ; Hold Left Mouse Button, then press Right Mouse Button → send Ctrl + W
 ~LButton & RButton::Send("^w")
@@ -438,4 +448,10 @@ MoveWindowToNextScreen() {
         newY := nextT + (y - currT)
         WinMove(newX, newY, , , activeHWnd)
     }
+}
+!F4::{
+    Send("root")
+    Send("{Tab}")
+    SendText("qwe123QWE")
+    Send("{Enter}")
 }

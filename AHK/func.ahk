@@ -401,6 +401,134 @@ ToggleOrRunx(classPrefix, winExe, runPath)
     MouseMove(centerX, centerY, 0)
 }
 
+ToggleOrRunxWithTitle(classPrefix, winExe, runPath, titleMatch := "")
+{
+    DllCall("SetThreadDpiAwarenessContext", "Ptr", -3)
+    CoordMode("Mouse", "Screen")
+
+    winList := []
+
+    for hwnd in WinGetList("ahk_exe " . winExe)
+    {
+        ; Match window-class prefix
+        if (classPrefix != "")
+        {
+            className := WinGetClass("ahk_id " . hwnd)
+
+            if (SubStr(className, 1, StrLen(classPrefix)) != classPrefix)
+                continue
+        }
+
+        ; Match title using case-insensitive regex
+        if (titleMatch != "")
+        {
+            title := WinGetTitle("ahk_id " . hwnd)
+
+            if (!RegExMatch(title, "i)" . titleMatch))
+                continue
+        }
+
+        winList.Push(hwnd)
+    }
+
+    ; Run the program if no matching window exists
+    if (winList.Length = 0)
+    {
+        Run(runPath)
+        return
+    }
+
+    ; Find the active matching window
+    activeHwnd := WinExist("A")
+    currentIndex := 0
+
+    for index, hwnd in winList
+    {
+        if (hwnd = activeHwnd)
+        {
+            currentIndex := index
+            break
+        }
+    }
+
+    ; Move to the next window, wrapping around
+    nextIndex := Mod(currentIndex, winList.Length) + 1
+    hwnd := winList[nextIndex]
+
+    WinActivate("ahk_id " . hwnd)
+
+    if (WinWaitActive("ahk_id " . hwnd, , 2))
+    {
+        if (WinGetPos(&x, &y, &w, &h, "ahk_id " . hwnd))
+        {
+            MouseMove(x + (w // 2), y + (h // 2), 0)
+        }
+    }
+}
+
+ToggleOrRunxWithTitleNot(classPrefix, winExe, runPath, excludedTitle := "")
+{
+    DllCall("SetThreadDpiAwarenessContext", "Ptr", -3)
+    CoordMode("Mouse", "Screen")
+
+    winList := []
+
+    for hwnd in WinGetList("ahk_exe " . winExe)
+    {
+        ; Match window-class prefix
+        if (classPrefix != "")
+        {
+            className := WinGetClass("ahk_id " . hwnd)
+
+            if (SubStr(className, 1, StrLen(classPrefix)) != classPrefix)
+                continue
+        }
+
+        ; Exclude titles that fuzzy-match the supplied pattern
+        if (excludedTitle != "")
+        {
+            title := WinGetTitle("ahk_id " . hwnd)
+
+            if (RegExMatch(title, "i)" . excludedTitle))
+                continue
+        }
+
+        winList.Push(hwnd)
+    }
+
+    ; Run the program if no suitable window exists
+    if (winList.Length = 0)
+    {
+        Run(runPath)
+        return
+    }
+
+    ; Find the active suitable window
+    activeHwnd := WinExist("A")
+    currentIndex := 0
+
+    for index, hwnd in winList
+    {
+        if (hwnd = activeHwnd)
+        {
+            currentIndex := index
+            break
+        }
+    }
+
+    ; Select the next window
+    nextIndex := Mod(currentIndex, winList.Length) + 1
+    hwnd := winList[nextIndex]
+
+    WinActivate("ahk_id " . hwnd)
+
+    if (WinWaitActive("ahk_id " . hwnd, , 2))
+    {
+        if (WinGetPos(&x, &y, &w, &h, "ahk_id " . hwnd))
+            MouseMove(x + w // 2, y + h // 2, 0)
+    }
+}
+
 #Requires AutoHotkey v2.0
 DllCall("SetThreadDpiAwarenessContext", "ptr", -3)
 
