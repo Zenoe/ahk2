@@ -327,6 +327,11 @@ ToggleOrRunxWithTitleNot("mintty", "mintty.exe", "C:\Users\2004l\Desktop\Cygwin6
 return
 }
 
+^!z:: {
+ToggleOrRunxWithTitle("Chrome_WidgetWin_1", "ChatGPT.exe", "ChatGPT.exe", "ChatGPT")
+return
+}
+
 #v::
 {
 ToggleOrRunxWithTitle("mintty", "mintty.exe", "C:\Program Files\Git\git-bash.exe", "MINGW64")
